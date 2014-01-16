@@ -25,4 +25,6 @@ To run this program you have to build the code using build.xml and run the linke
 
 Hadoop 0.20 must be installed and added to the classpath and also pig 0.10.0 when using pig. The jars of lib/* must be added to the include path as well.
 
+### Structure
+Our paper can be found in `doc` directory. The job-report can be found in `report` directory. 
 
