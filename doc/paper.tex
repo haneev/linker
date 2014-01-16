@@ -100,14 +100,22 @@ We've had some errors with trying it on the fullset. First of all it did not sta
 % TODO Rik
 Our top results were. A, B and C. Which are very good. We created a tool for parsing the pairs and displaying the alternatives. 
 
+The smaller dataset (that of about 5 GB) had an output text file, produced by Linker.java, of about 500 MB. This text file was put in our Parser.java to collect all the tuples that were directly associated with one of the car brands. These tuples were stored into a database. While the text file can be read quite fast by Java, writing to the database seems to be the real bottleneck here with a processing time of Parser of just under five minutes for 677 tuples.
+
+With all the car brand corresponding tuples in the database only a simple SQL-query was necessary to retrieve the top results. Very interesting seems the top two: Jeep-Dodge (420 references) and Dodge-Jeep (414). The third most found reference was that of Suzuki-Honda (337). In total the 677 tuples consist of 5656 references.
+
 \subsection{Killer result}
 % Iets de in trant van 
 % 1. pleur tuples in db; 2. select a,b,count from tuples where a like '%term%' or b like '%term%' order by count DESC
 % 3. show top results :) zoiets? :P
-%TODO Rik
+The tuples are all collected in a database and thanks to the output text the tuples are already sorted alphabetically on the first word of the tuple. For now the \emph{"killer result"} of our project is that of a simple webpage that retrieves the data from the database and shows it in a clear overview. For each car associated cars are listed in a small table. These tables is sortable, which means that the user can for each car either search on the name of associated cars (by sorting the corresponding table alphabetically on the car's name) or on the most associated car (by sorting the table on the amount of references).
+
+At the top of the webpage the top three tuples with the most references are listed, together with the total amount of references. These results are discussed in details in the Results section.
 
 \subsection{Discussion}
 Our script have parsed many alternatives. Our idea was to give an alternative for everything. We sort of did that, using the alternatives given in lists by users in html data. In our database we have pairs of relations. So, a relation with a high count is found many times in the html pages, thus likely to be related. 
+
+A shortcoming of our solution is that only tuples with a direct match of a car brand end up in the final result. For example, if a Ferrari is listed as "Ferrari F40", it wouldn't get into the database (because it is skipped in the Parser). So there is some improvement which can also create the possibility to associate certain car types with each other. Furthermore, tuples with linebreaks in them are not dealt with right now in the Parser. 
 
 We found out that the winner of last year norvig award did something alike. It used the same technique for another purpose. Our idea and code are built from the ground up, and we did found out after assignment 6. So, we hope that this is not a issue.
 \appendix 
