@@ -13,7 +13,7 @@ public class Helper {
 	/**
 	 * Pattern that matches the lists: a,b,c or z. 
 	 */
-    public static Pattern p = Pattern.compile("((?:[a-z0-9_\\-]{3,25}\\s*){1,3}+[,]\\s*){1,10}((?:[a-z0-9_\\-]{3,25}\\s*){1,3}(\\s+(?:and|or)\\s+)(?:[a-z0-9_\\-]{3,25}\\s*){1,3})", Pattern.CASE_INSENSITIVE);
+    public static Pattern p = Pattern.compile("(([a-z0-9_\\-]{3,25}\\s*){1,3}+[,]\\s*){1,10}(([a-z0-9_\\-]{3,25}\\s*){1,3}(\\s+(and|or)\\s+)([a-z0-9_\\-]{3,25}\\s*){1,3})", Pattern.CASE_INSENSITIVE);
 	
     /**
      * Parse the lists into Tuples

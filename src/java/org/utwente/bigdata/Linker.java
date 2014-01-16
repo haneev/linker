@@ -3,6 +3,12 @@ package org.utwente.bigdata;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -51,13 +57,14 @@ public class Linker extends Configured implements Tool {
     HTML_ERROR,
     EXCEPTIONS,
     OUT_OF_MEMORY,
-    DOCUMENTS_IN
+    DOCUMENTS_IN,
+    DURATION_TO_LONG
   };
 
   /**
    */
   public static class LinkerMapper extends Mapper<Text, ArcRecord, Text, LongWritable> {
-    
+      
     private LongWritable outVal = new LongWritable(1);
  
     // HTML to be parsed
@@ -65,6 +72,9 @@ public class Linker extends Configured implements Tool {
     
     public void map(Text key, ArcRecord value, final Context context) throws IOException {
       try {
+    	  
+    	ExecutorService executor = Executors.newFixedThreadPool(1);
+    	  
     	// only get html
         if (!value.getContentType().contains("html")) {
           context.getCounter(MAPPERCOUNTER.HTML_ERROR).increment(1);
@@ -84,16 +94,12 @@ public class Linker extends Configured implements Tool {
         }
         
         // maximum time for executing a page is 200ms
-        Thread r = new Thread() {
+        Future<?> future = executor.submit(new Runnable() {
         	public void run() {
         		
         		try {
         			context.getCounter(MAPPERCOUNTER.DOCUMENTS_IN).increment(1);
-        			
-        			// replace all html with nothing
-	                html = html.replaceAll("<[^>]+>", "");
-	                html = html.replaceAll("&[a-zA-Z]+;"," ");
-	                	
+        				                	
 	                // get a list of tuples of the html
 	                List<Tuple<String, String>> tuples = h.parts(html);
 	
@@ -110,10 +116,26 @@ public class Linker extends Configured implements Tool {
         		     context.getCounter(MAPPERCOUNTER.EXCEPTIONS).increment(1);
         		}
         	}
-        };
+        });
         
-       r.run();
-       r.join(200);
+        int timeout = 40;
+        
+        // copied from http://stackoverflow.com/questions/20500003/setting-a-maximum-execution-time-for-a-method-thread
+        executor.shutdown();
+        try {
+            future.get(timeout, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+        } catch (ExecutionException e) {
+        	LOG.error("Caught Exception", e);
+            context.getCounter(MAPPERCOUNTER.EXCEPTIONS).increment(1);
+        } catch (TimeoutException e) {
+            future.cancel(true);
+            context.getCounter(MAPPERCOUNTER.DURATION_TO_LONG).increment(1);
+        }
+
+        if(!executor.awaitTermination(timeout+2, TimeUnit.MILLISECONDS)){
+            executor.shutdownNow();
+        }
         
       }
       catch (Throwable e) {
@@ -190,6 +212,7 @@ public class Linker extends Configured implements Tool {
     // Create the Hadoop job.
     Configuration conf = getConf();
     conf.set("mapred.textoutputformat.separator",";");
+    conf.set("mapred.task.timeout", "750000");
     
     Job job = new Job(conf);
     job.setJarByClass(ExampleTextWordCount.class);
@@ -213,7 +236,7 @@ public class Linker extends Configured implements Tool {
     // Set the path where final output 'part' files will be saved.
     LOG.info("setting output path to '" + outputPath + "'");
     FileOutputFormat.setOutputPath(job, new Path(outputPath));
-    FileOutputFormat.setCompressOutput(job, false);
+    FileOutputFormat.setCompressOutput(job, true);
 
     // Set which InputFormat class to use.
     job.setInputFormatClass(ArcInputFormat.class);
