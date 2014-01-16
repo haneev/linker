@@ -16,6 +16,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.compress.GzipCodec;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -47,6 +48,7 @@ public class Linker extends Configured implements Tool {
   private static final String ARGNAME_OUTPATH = "-out";
   private static final String ARGNAME_CONF = "-conf";
   private static final String ARGNAME_OVERWRITE = "-overwrite";
+  private static final String ARGNAME_COMPRESS = "-compress";
   private static final String ARGNAME_MAXFILES = "-maxfiles";
   private static final String ARGNAME_NUMREDUCE = "-numreducers";
   private static final String FILEFILTER = ".arc.gz";
@@ -170,7 +172,10 @@ public class Linker extends Configured implements Tool {
     String inputPath = null;
     String outputPath = null;
     String configFile = null;
-    boolean overwrite = true;
+    
+    boolean overwrite = false;
+    boolean compression = false;
+    
     int numReducers = 1;
 
     // Read the command line arguments. We're not using GenericOptionsParser
@@ -187,6 +192,8 @@ public class Linker extends Configured implements Tool {
           SampleFilter.setMax(Long.parseLong(args[++i]));
         } else if (args[i].equals(ARGNAME_OVERWRITE)) {
           overwrite = true;
+        } else if (args[i].equals(ARGNAME_COMPRESS)) {
+          compression = true;
         } else if (args[i].equals(ARGNAME_NUMREDUCE)) {
           numReducers = Integer.parseInt(args[++i]);
         } else {
@@ -236,7 +243,11 @@ public class Linker extends Configured implements Tool {
     // Set the path where final output 'part' files will be saved.
     LOG.info("setting output path to '" + outputPath + "'");
     FileOutputFormat.setOutputPath(job, new Path(outputPath));
-    FileOutputFormat.setCompressOutput(job, true);
+    
+    if(compression) {
+    	FileOutputFormat.setCompressOutput(job, true);
+    	FileOutputFormat.setOutputCompressorClass(job, GzipCodec.class); // makes live very easy
+    }
 
     // Set which InputFormat class to use.
     job.setInputFormatClass(ArcInputFormat.class);
