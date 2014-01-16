@@ -1,0 +1,125 @@
+\documentclass[a4paper,10pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage[parfill]{parskip}
+\usepackage{listings}
+\usepackage{fullpage}
+\usepackage{mathtools}
+\usepackage{hyperref}
+
+\title{Linker - Big Data Management}
+\author{Rik van Outersterp and Han van der Veen}
+
+\lstset{ %
+  captionpos=b,
+  columns=flexible,
+  frame=single,
+  basicstyle=\footnotesize,
+  breaklines=true,
+  basicstyle=\footnotesize\ttfamily
+}
+
+\begin{document}
+\maketitle
+\pagenumbering{arabic}
+
+\section{Idea}
+
+\begin{quote}
+What if we can see immediately the alternatives for everything in the world?
+\end{quote}
+
+Nowadays advertisers have a great influence on people. 
+Using advertisements in media such as the Internet, television, and radio they try to convince people to buying certain products. 
+However, advertisements can make the market seem smaller than it actually is.
+Not every company has the ability to advertise their product on the same scale as other companies.
+That pushes people in certain directions, away from alternatives for which is advertised in a different way (e.g. another medium), in lesser extent, or not at all.
+
+Our idea is that for every product in the world there is an alternative and that this alternative can be better than the original product. % better is vaag, oplossing voor bedenken
+What we would like to do is to give people the option to find those alternatives and to compare them against each other and the original product. 
+As advertisement is not always done for alternatives it can be difficult to find them.
+However, big data analysis can solve this problem.
+
+In our research we choose to search only things in lists, because we think that will be sufficient to solve this problem.
+We use big data analysis on CommonCrawl to retrieve alternatives for certain cars.
+
+\section{Method}
+The first thing we need to do is to restrict our analysis to pages that are about cars. 
+We select those pages using a list of cars brands. 
+If a page contains a brand, that page is included in our analysis. 
+This can be done with one regular expression for every page. 
+We use a mapper function, because that restricts our result set. 
+
+The analysis of the alternatives is done through looking for lists that are mentioned in the pages itself. 
+A list has a certain structure. It can be a sentence such as \emph{a, b or c} or \emph{x, y and z}. 
+We use this common structure to find alternatives, since we assume that the listed elements are alternatives.
+
+We pack the crossproduct of the sentence \emph{x,y and z} into tuples. The tuples will be \emph{(x,y), (y,z) and (z,x)}. Our mapper outputs the tuples with a concatenation of x and y. For example, \emph{x||y} is the emitted key. We group on each pair. And our reducer does a count on the occurences of the tuple. When a tuple has a high count, it is most likely to be related. 
+
+The technical explanation will come in the second part. 
+
+% java
+% job count
+
+\subsection{Expectations}
+Our expectations are that with loads of pairs the relations will be quite good. In our test dataset it will not be, because there will be too much different terms that actually have the same meaning. For example in the lists \emph{Audi, BMW, and Skoda} and \emph{Skoda Fabia or Superb} the grouping will be on Skoda and on Skoda Fabia. With loads of data we expect that this relation will automatically occur, because there are probably many results with the same term.
+
+Our results for now are as expected, but we cannot find any relations at the moment. The expected results on the SARA set is that we can find relations on popular terms, but not on small terms or very specfic terms. Our method is depending on that the variations of the terms will occur on the web. So that related terms will be found.
+
+As our \emph{"killer result"} we want that you can type in a term, for example on a special webpage, and directly see the alternatives for that term. A very interesting visualization for this would be a graph of alternatives that are connected to the searched term, which is displayed in the center. Perhaps the nodes for the alternatives can be adjusted in size depending on the number of times they are mentioned.
+
+\section{Results}
+Our program has been tested on a sample of the dataset. The proposed norvig award test set was not there anymore so we test it on a subset of the common-crawl output (about 5GB of data)\footnote{with -maxfiles 50 switch}.
+
+\subsection{Test set}
+We created 50 mappers and 1 reducer. The job was done after 31 minutes. some of the jobs failed and that causes the long running time. If we use that for estimating what it takes using the full dataset, it takes about 100 days. 
+\begin{displaymath}
+\text{total time} = \frac{25000000 MB}{5000MB} = 5000; \frac{(5000 * 31\text{minutes})}{60 \text{minutes}} = 2583 \text{ hours, approx. 107 days}. 
+\end{displaymath}
+However on more data the cluster is faster, because every job can be runned directly after the other, so we think it the job will be done in about 3 days. 
+
+Our top results of our sample-subset was: 
+\begin{lstlisting}[caption=Results of sample set]
+A||B;Count
+
+broadcast||published;472
+greeting cards||000 brochures;473
+passw||Login with username;561
+Bank Owned Homes||Columbus Ohio F;1630
+Columbus Ohio F||eclosure;1630
+eclosure||Columbus Ohio F;1630
+\end{lstlisting}
+
+Only interesting is passw and username. That is somehow an alternative. In the results set was also Twitter and Facebook, and also Gold and Silver. Which are good results, but not the top results, but probably they will be higher with more sites. 
+
+\subsection{Full set}
+We've had some errors with trying it on the fullset. First of all it did not start with a job greater than 2000 files. Second of all, the jobs failed due to the fact that the java client has failed, thus the task was killed. Assuming it was the fault of our code we simplified the code, stripped all unneccesary code and sticked to the very base of our idea. We did run it on a greater dataset of about 2,7 TB and 106 million html pages. The full job taked about 7 hours minutes and our results was about 97 million relational tuples\footnote{report of this job can be found on github}.
+
+\subsection{Results}
+% TODO Rik
+Our top results were. A, B and C. Which are very good. We created a tool for parsing the pairs and displaying the alternatives. 
+
+\subsection{Killer result}
+% Iets de in trant van 
+% 1. pleur tuples in db; 2. select a,b,count from tuples where a like '%term%' or b like '%term%' order by count DESC
+% 3. show top results :) zoiets? :P
+%TODO Rik
+
+\subsection{Discussion}
+Our script have parsed many alternatives. Our idea was to give an alternative for everything. We sort of did that, using the alternatives given in lists by users in html data. In our database we have pairs of relations. So, a relation with a high count is found many times in the html pages, thus likely to be related. 
+
+We found out that the winner of last year norvig award did something alike. It used the same technique for another purpose. Our idea and code are built from the ground up, and we did found out after assignment 6. So, we hope that this is not a issue.
+\appendix 
+
+\section{Code}
+The code can be found on github.com. The project is called linker and can be access at \url{https://github.com/haneev/linker}. To run this program you have to build the code using build.xml and run the linker script in eclipse with the following parameters:
+\begin{lstlisting}
+Linker -in /path/to/arc/file -out /where/to/put/the/output/dir
+\end{lstlisting}
+
+Hadoop 0.20 must be installed and added to the classpath and also pig 0.10.0 when using pig. The jars of lib/* must be added to the include path as well.
+
+\lstlistoflistings
+
+\end{document}
