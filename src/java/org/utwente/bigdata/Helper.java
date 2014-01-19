@@ -13,7 +13,7 @@ public class Helper {
 	/**
 	 * Pattern that matches the lists: a,b,c or z. 
 	 */
-    public static Pattern p = Pattern.compile("(([a-z0-9_\\-]{3,25}\\s*){1,3}+[,]\\s*){1,10}(([a-z0-9_\\-]{3,25}\\s*){1,3}(\\s+(and|or)\\s+)([a-z0-9_\\-]{3,25}\\s*){1,3})", Pattern.CASE_INSENSITIVE);
+    public static Pattern p = Pattern.compile("([a-z0-9\\-\\040]{3,20}[,])([a-z0-9_\\-\\040]{3,40}[,]\\s*){0,8}([a-z0-9_\\-\\040]{3,40}(\\s+(and|or)\\s+)[a-z0-9_\\-\\040]{3,40})", Pattern.CASE_INSENSITIVE);
 	
     /**
      * Parse the lists into Tuples
@@ -21,7 +21,9 @@ public class Helper {
      * @return list of tuples
      */
     public List<Tuple<String, String>> parts(String html) {
-    	
+		// strip html
+		html = html.replaceAll("<[^>]+>","");
+		
     	List<Tuple<String,String>> list = new ArrayList<Tuple<String,String>>();
     	Matcher m = p.matcher(html);
     	
@@ -31,12 +33,13 @@ public class Helper {
     		List<String> items = new ArrayList<String>(); 
     		
     		String all = m.group(0);
-    		String[] parts = all.split("([,;]|and|or)");
+    		String[] parts = all.split("([,;]|\\Wand\\W|\\Wor\\W)");
     		
     		// item to a lists
     		for(String part : parts) {
-    			if(!part.trim().isEmpty())
-    				items.add(part.trim());
+				part = part.trim();
+    			if(part.length() > 2)
+    				items.add(part.toLowerCase());
     		}
     	
     		// Parse the combinations into Tuples. Only tuples with (a,b) and not (b,a) and only if a is not already parsed.
@@ -45,10 +48,10 @@ public class Helper {
     			for(String inner : items) {
     				if(!item.equals(inner)) {
     					String a,b;
-    					if(item.compareToIgnoreCase(inner) < 0) {
+    					if(item.compareTo(inner) < 0) {
     						a = item; b = inner;
     					} else {
-    						b = inner; a = item;
+    						b = item; a = inner;
     					}
     					
     					// check if tuple already exists...
@@ -58,7 +61,6 @@ public class Helper {
     						parsed.add(a);
     					}
     				}
-    				
     			}
     		}
     	}

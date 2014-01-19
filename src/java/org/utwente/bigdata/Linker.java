@@ -75,6 +75,8 @@ public class Linker extends Configured implements Tool {
     public void map(Text key, ArcRecord value, final Context context) throws IOException {
       try {
     	  
+    	int timeout = 60;
+    	  
     	ExecutorService executor = Executors.newFixedThreadPool(1);
     	  
     	// only get html
@@ -107,11 +109,9 @@ public class Linker extends Configured implements Tool {
 	
 	                // parse it and emit them concatenated with ||
                 	for(Tuple<String, String> tuple : tuples) {
-                		String a = tuple.getFirst().trim();
-                		String b = tuple.getSecond().trim();
-                		if(b.length() > 3 && a.length() > 3) {
-                			context.write(new Text(a + "||" + b), outVal);
-                		}
+                		String a = tuple.getFirst();
+                		String b = tuple.getSecond();
+                		context.write(new Text(a + "||" + b), outVal);
                 	}
         		} catch(Exception e) {
         			 LOG.error("Caught Exception", e);
@@ -120,7 +120,7 @@ public class Linker extends Configured implements Tool {
         	}
         });
         
-        int timeout = 40;
+        
         
         // copied from http://stackoverflow.com/questions/20500003/setting-a-maximum-execution-time-for-a-method-thread
         executor.shutdown();
