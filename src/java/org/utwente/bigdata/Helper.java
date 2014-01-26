@@ -5,6 +5,9 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.hadoop.mapreduce.Mapper.Context;
+import org.utwente.bigdata.Linker.MAPPERCOUNTER;
+
 /**
  * Helper class that only parse the sentences
  * @author Han van der Veen
@@ -13,14 +16,14 @@ public class Helper {
 	/**
 	 * Pattern that matches the lists: a,b,c or z. 
 	 */
-    public static Pattern p = Pattern.compile("([a-z0-9\\-\\040]{3,20}[,])([a-z0-9_\\-\\040]{3,40}[,]\\s*){0,8}([a-z0-9_\\-\\040]{3,40}(\\s+(and|or)\\s+)[a-z0-9_\\-\\040]{3,40})", Pattern.CASE_INSENSITIVE);
+    public static Pattern p = Pattern.compile("([a-z0-9\\-\\040]{3,25}[,])([a-z0-9_\\-\\040]{3,25}[,]\\s*){0,8}([a-z0-9_\\-\\040]{3,25}(\\s+(and|or)\\s+)[a-z0-9_\\-\\040]{3,25})", Pattern.CASE_INSENSITIVE);
 	
     /**
      * Parse the lists into Tuples
      * @param html
      * @return list of tuples
      */
-    public List<Tuple<String, String>> parts(String html) {
+    public List<Tuple<String, String>> parts(Context context, String html) {
 		// strip html
 		html = html.replaceAll("<[^>]+>","");
 		
@@ -28,6 +31,8 @@ public class Helper {
     	Matcher m = p.matcher(html);
     	
     	while(m.find()) {
+    		
+    		context.getCounter(Linker.MAPPERCOUNTER.MATCHES_FOUND).increment(1);
     		
     		// items of the lists
     		List<String> items = new ArrayList<String>(); 

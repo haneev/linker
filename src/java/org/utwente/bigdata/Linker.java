@@ -60,7 +60,8 @@ public class Linker extends Configured implements Tool {
     EXCEPTIONS,
     OUT_OF_MEMORY,
     DOCUMENTS_IN,
-    DURATION_TO_LONG
+    DURATION_TO_LONG,
+    MATCHES_FOUND
   };
 
   /**
@@ -105,7 +106,7 @@ public class Linker extends Configured implements Tool {
         			context.getCounter(MAPPERCOUNTER.DOCUMENTS_IN).increment(1);
         				                	
 	                // get a list of tuples of the html
-	                List<Tuple<String, String>> tuples = h.parts(html);
+	                List<Tuple<String, String>> tuples = h.parts(context, html);
 	
 	                // parse it and emit them concatenated with ||
                 	for(Tuple<String, String> tuple : tuples) {
