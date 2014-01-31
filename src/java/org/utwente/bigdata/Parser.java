@@ -4,16 +4,12 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
 
 public class Parser {
 	
 	private String inputPath;
 	private DBConnection connection;
-	private String dbTable = "sampleset2";
-	String[] carArray = new String[] {"Abarth", "Alfa Romeo", "Asia Motors", "Aston Martin", "Audi", "Austin", "Autobianchi", "Bentley", "BMW", "Bugatti", "Buick", "Cadillac", "Carver", "Chevrolet", "Chrysler", "Citroen", "Corvette", "Dacia", "Daewoo", "Daihatsu", "Daimler", "Datsun", "Dodge", "Donkervoort", "Ferrari", "Fiat", "Fisker", "Ford", "FSO", "Galloper", "Honda", "Hummer", "Hyundai", "Infiniti", "Innocenti", "Iveco", "Jaguar", "Jeep", "Josse", "Kia", "KTM", "Lada", "Lamborghini", "Lancia", "Land Rover", "Landwind", "Lexus", "Lincoln", "Lotus", "Marcos", "Maserati", "Maybach", "Mazda", "Mega", "Mercedes", "Mercury", "MG", "Mini", "Mitsubishi", "Morgan", "Morris", "Nissan", "Noble", "Opel", "Peugeot", "PGO", "Pontiac", "Porsche", "Princess", "Renault", "Rolls-Royce", "Rover", "Saab", "Seat", "Skoda", "Smart", "Spectre", "SsangYong", "Subaru", "Suzuki", "Talbot", "Tesla", "Think", "Toyota", "Triumph", "TVR", "Volkswagen", "Volvo", "Yugo"};
-	List<String> carList;
+	private String dbTable = "sampleset";
 	
 
 	public Parser(String inputPath, DBConnection connection) {
@@ -22,7 +18,6 @@ public class Parser {
 		this.connection = connection;
 		System.out.println("Connected to database...");
 		
-		carList = Arrays.asList(carArray);
 	}
 	
 	private void run() {
@@ -66,11 +61,8 @@ public class Parser {
 					}
 					// Now we have a digit
 					
-					// Let's insert it into our database if both are in our list
-					// But only when we are talking about cars!
-					if(carList.contains(wordX) && carList.contains(wordY)){ 
-						connection.insertData("INSERT INTO "+dbTable+" (word1,word2,count) VALUES ('"+wordX+"','"+wordY+"','"+digit+"')");
-					}
+					// Let's insert it into our database
+					connection.insertData("INSERT INTO "+dbTable+" (word1,word2,count) VALUES ('"+wordX+"','"+wordY+"','"+digit+"')");
 				} else {
 					// Hier komen pairs met linebreaks uit.
 					// Kan waarschijnlijk wel weggewerkt worden.
